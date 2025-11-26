@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Pomodoro Timer</h1>
+        </header>
+        <main>
+            <div class="timer">
+                <svg width="300" height="300" viewBox="0 0 300 300">
+                    <circle cx="150" cy="150" r="140" stroke="#ddd" stroke-width="10" fill="none"/>
+                    <circle cx="150" cy="150" r="140" stroke="#ff6b6b" stroke-width="10" fill="none" stroke-dasharray="879.6" stroke-dashoffset="0" transform="rotate(-90 150 150)" :stroke-dashoffset="dashOffset"/>
+                </svg>
+                <div class="time-display">{{ formattedTime }}</div>
+                <div class="status">{{ currentMode === 'Work' ? settings.title : currentMode }}</div>
+                <div class="controls">
+                    <button @click="startTimer" :disabled="isRunning">Start</button>
+                    <button @click="pauseTimer" :disabled="!isRunning">Pause</button>
+                    <button @click="resetTimer">Reset</button>
+                </div>
+            </div>
+            <div class="settings">
+                <button @click="showSettings = true">Settings</button>
+                <button @click="showDashboard = !showDashboard">Dashboard</button>
+            </div>
+        </main>
+        <div v-if="showDashboard" class="dashboard">
+            <h2>Dashboard</h2>
+            <p>Total Sessions: {{ sessionCount }}</p>
+            <p>Total Pomodoros: {{ completedPomodoros }}</p>
+            <canvas id="chart"></canvas>
+        </div>
+        <div v-if="showSettings" class="modal">
+            <div class="modal-content">
+                <h2>Settings</h2>
+                <label>Title: <input v-model="settings.title" type="text"></label>
+                <label>Work (mins): <input v-model.number="settings.work" type="number" min="1"></label>
+                <label>Short Break (mins): <input v-model.number="settings.shortBreak" type="number" min="1"></label>
+                <label>Long Break (mins): <input v-model.number="settings.longBreak" type="number" min="1"></label>
+                <label>Auto Start: <input v-model="settings.autoStart" type="checkbox"></label>
+                <label>Notifications: <input v-model="settings.notifications" type="checkbox"></label>
+                <label>Sound: <input v-model="settings.sound" type="checkbox"></label>
+                <button @click="saveSettings">Save</button>
+                <button @click="showSettings = false">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
