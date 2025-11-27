@@ -161,10 +161,7 @@ createApp({
                 }
             } else {
                 this.currentMode = 'Work';
-                if (this.currentMode === 'Work' && this.completedPomodoros % 4 === 0) {
-                    this.sessionCount++;
-                    this.saveSession();
-                }
+                // sessionCount is calculated from completedPomodoros
             }
             // Complete current activity and start new
             if (this.currentActivity) {
