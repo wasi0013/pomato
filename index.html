@@ -48,6 +48,12 @@
                         <path d="M5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3ZM7 17H9V13H7V17ZM11 17H13V7H11V17ZM15 17H17V10H15V17Z"/>
                     </svg>
                 </button>
+                <button @click="showLogViewer = true" class="icon-btn">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        <path d="M9,13H15V15H9V13M9,9H15V11H9V9M9,17H13V19H9V17Z"/>
+                    </svg>
+                </button>
             </div>
         </main>
         <div v-if="showSettings" class="modal">
@@ -64,7 +70,7 @@
                 <button @click="showSettings = false">Cancel</button>
             </div>
         </div>
-        <div v-if="showDashboardModal" class="modal">
+                <div v-if="showDashboardModal" class="modal">
             <div class="modal-content dashboard-modal">
                 <h2>Dashboard</h2>
                 <p>Total Sessions: {{ sessionCount }}</p>
@@ -73,7 +79,7 @@
                     <div class="progress" :style="{width: progressPercent + '%'}"></div>
                     <span class="progress-text">{{ Math.round(progressPercent) }}% Complete</span>
                 </div>
-                <div v-if="sessions.length === 0" class="no-data">No sessions yet. Complete some pomodoros to see your progress!</div>
+                <div v-if="activities.length === 0" class="no-data">No sessions yet. Complete some pomodoros to see your progress!</div>
                 <div v-else>
                     <h3>Daily Progress</h3>
                     <canvas id="lineChart"></canvas>
@@ -81,6 +87,29 @@
                     <canvas id="chart"></canvas>
                 </div>
                 <button @click="showDashboardModal = false" class="close-btn">Close</button>
+            </div>
+        </div>
+        <div v-if="showLogViewer" class="modal">
+            <div class="modal-content log-modal">
+                <h2>Activity Logs</h2>
+                <div v-if="activities.length === 0" class="no-data">No activities logged yet.</div>
+                <div v-else class="log-list">
+                    <div v-for="(activity, index) in activities.slice().reverse()" :key="index" class="log-entry">
+                        <div class="log-header">
+                            <strong>{{ activity.mode }}</strong>
+                            <span v-if="activity.title"> - {{ activity.title }}</span>
+                            <span class="log-status" :class="{ completed: activity.completed, paused: !activity.completed }">
+                                {{ activity.completed ? 'Completed' : 'Paused' }}
+                            </span>
+                        </div>
+                        <div class="log-details">
+                            <span>Started: {{ new Date(activity.start).toLocaleString() }}</span>
+                            <span v-if="activity.end">Ended: {{ new Date(activity.end).toLocaleString() }}</span>
+                            <span>Duration: {{ Math.floor(activity.elapsed / 60) }}m {{ activity.elapsed % 60 }}s</span>
+                        </div>
+                    </div>
+                </div>
+                <button @click="showLogViewer = false" class="close-btn">Close</button>
             </div>
         </div>
     </div>

@@ -10,6 +10,7 @@ createApp({
             interval: null,
             showSettings: false,
             showDashboardModal: false,
+            showLogViewer: false,
             chartInstance: null,
             lineChartInstance: null,
             currentActivity: null,

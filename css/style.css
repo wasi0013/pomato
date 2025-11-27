@@ -266,7 +266,8 @@ header h1 {
     color: white;
 }
 
-.modal-content.dashboard-modal {
+.modal-content.dashboard-modal,
+.modal-content.log-modal {
     max-width: 500px;
 }
 
@@ -275,6 +276,56 @@ header h1 {
     max-width: 100%;
     height: 250px;
     margin: 20px 0;
+}
+
+.log-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 20px 0;
+}
+
+.log-entry {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-left: 4px solid #ff6b6b;
+}
+
+.log-entry.completed {
+    border-left-color: #4CAF50;
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.log-status {
+    font-size: 0.8em;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.log-status.completed {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+}
+
+.log-status.paused {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+.log-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.9em;
+    color: #ccc;
 }
 
 .close-btn {
