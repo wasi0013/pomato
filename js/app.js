@@ -131,47 +131,59 @@ createApp({
             this.resetTimer();
         },
         timerFinished() {
-            this.pauseTimer();
+            // stop the running interval without triggering pause logic
+            clearInterval(this.interval);
+            this.isRunning = false;
+
+            // mark the current activity as completed and save it
+            if (this.currentActivity && !this.currentActivity.end) {
+                this.currentActivity.end = new Date().toISOString();
+                // compute elapsed based on timestamps to be accurate across pauses
+                this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000) || this.getTotalTimeForMode();
+                this.currentActivity.completed = true;
+                this.activities.push({ ...this.currentActivity });
+                this.saveActivities();
+                this.currentActivity = null;
+            }
+
             if (this.settings.notifications) {
                 this.showNotification();
             }
             if (this.settings.sound) {
                 this.playSound();
             }
-            if (this.currentActivity) {
-                this.currentActivity.end = new Date().toISOString();
-                this.currentActivity.elapsed = this.getTotalTimeForMode();
-                this.currentActivity.completed = true;
-                this.activities.push({ ...this.currentActivity });
-                this.saveActivities();
-                this.currentActivity = null;
-            }
+
+            // switch mode (will start a fresh activity for the next mode)
             this.switchMode();
             if (this.settings.autoStart) {
                 this.startTimer();
             }
         },
         switchMode() {
-            const prevMode = this.currentMode;
+            // Determine next mode based on completed work activities
+            const completedWork = this.activities.filter(a => a.mode === 'Work' && a.completed).length;
             if (this.currentMode === 'Work') {
-                this.completedPomodoros++;
-                if (this.completedPomodoros % 4 === 0) {
+                // if the number of completed work sessions is a multiple of 4, go to long break
+                if ((completedWork) % 4 === 0) {
                     this.currentMode = 'Long Break';
                 } else {
                     this.currentMode = 'Short Break';
                 }
             } else {
                 this.currentMode = 'Work';
-                // sessionCount is calculated from completedPomodoros
             }
-            // Complete current activity and start new
-            if (this.currentActivity) {
+
+            // If any current activity still exists (should be rare), mark and save it
+            if (this.currentActivity && !this.currentActivity.end) {
                 this.currentActivity.end = new Date().toISOString();
                 this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000);
                 this.currentActivity.completed = true;
                 this.activities.push({ ...this.currentActivity });
                 this.saveActivities();
+                this.currentActivity = null;
             }
+
+            // start a fresh activity for the new mode
             this.currentActivity = {
                 mode: this.currentMode,
                 title: this.currentMode === 'Work' ? this.settings.title : null,
@@ -208,6 +220,9 @@ createApp({
         },
         saveActivities() {
             localStorage.setItem('pomodoroActivities', JSON.stringify(this.activities));
+            // update derived stats and refresh visualizations
+            this.updateStats();
+            this.renderChart();
         },
         loadActivities() {
             this.activities = JSON.parse(localStorage.getItem('pomodoroActivities') || '[]');
