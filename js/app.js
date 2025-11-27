@@ -102,6 +102,7 @@ createApp({
             if (this.currentActivity && !this.currentActivity.end) {
                 this.currentActivity.end = new Date().toISOString();
                 this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000);
+                this.currentActivity.completed = false;
                 this.activities.push({ ...this.currentActivity });
                 this.saveActivities();
                 this.currentActivity = null;
