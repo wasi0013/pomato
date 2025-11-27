@@ -43,7 +43,7 @@
                 </div>
             </div>
             <div class="settings">
-                <button @click="showSettings = true" class="icon-btn" aria-label="Settings">
+                <button @click="openSettings" class="icon-btn" aria-label="Settings">
                     <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <linearGradient id="g-settings" x1="0" x2="1">
@@ -85,18 +85,36 @@
                 </button>
             </div>
         </main>
-        <div v-if="showSettings" class="modal">
+                <div v-if="showSettings" class="modal">
             <div class="modal-content">
                 <h2>Settings</h2>
-                <label>Title: <input v-model="settings.title" type="text"></label>
-                <label>Work (mins): <input v-model.number="settings.work" type="number" min="1"></label>
-                <label>Short Break (mins): <input v-model.number="settings.shortBreak" type="number" min="1"></label>
-                <label>Long Break (mins): <input v-model.number="settings.longBreak" type="number" min="1"></label>
-                <label>Auto Start: <input v-model="settings.autoStart" type="checkbox"></label>
-                <label>Notifications: <input v-model="settings.notifications" type="checkbox"></label>
-                <label>Sound: <input v-model="settings.sound" type="checkbox"></label>
-                <button @click="saveSettings">Save</button>
-                <button @click="showSettings = false">Cancel</button>
+                <label>Title: <input v-model="settingsDraft.title" type="text"></label>
+
+                <label class="range-row">Work (mins):
+                    <input v-model.number="settingsDraft.work" type="range" min="1" max="60" step="1">
+                    <span class="track-tint" :style="{ width: (settingsDraft ? (settingsDraft.work / 60 * 100) : 0) + '%' }"></span>
+                    <span class="range-value">{{ settingsDraft.work }}m</span>
+                </label>
+
+                <label class="range-row">Short Break (mins):
+                    <input v-model.number="settingsDraft.shortBreak" type="range" min="1" max="60" step="1">
+                    <span class="track-tint" :style="{ width: (settingsDraft ? (settingsDraft.shortBreak / 60 * 100) : 0) + '%' }"></span>
+                    <span class="range-value">{{ settingsDraft.shortBreak }}m</span>
+                </label>
+
+                <label class="range-row">Long Break (mins):
+                    <input v-model.number="settingsDraft.longBreak" type="range" min="1" max="60" step="1">
+                    <span class="track-tint" :style="{ width: (settingsDraft ? (settingsDraft.longBreak / 60 * 100) : 0) + '%' }"></span>
+                    <span class="range-value">{{ settingsDraft.longBreak }}m</span>
+                </label>
+
+                <label>Auto Start: <input v-model="settingsDraft.autoStart" type="checkbox"></label>
+                <label>Notifications: <input v-model="settingsDraft.notifications" type="checkbox"></label>
+                <label>Sound: <input v-model="settingsDraft.sound" type="checkbox"></label>
+                <div class="modal-actions">
+                    <button class="btn primary" @click="commitSettings">Save</button>
+                    <button class="btn ghost" @click="cancelSettings">Cancel</button>
+                </div>
             </div>
         </div>
                 <div v-if="showDashboardModal" class="modal">

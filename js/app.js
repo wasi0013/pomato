@@ -24,6 +24,7 @@ createApp({
                 notifications: true,
                 sound: true
             },
+            settingsDraft: null,
             completedPomodoros: 0,
             sessionCount: 0,
             totalWorkMinutes: 0,
@@ -314,6 +315,27 @@ createApp({
             this.showSettings = false;
             this.resetTimer();
         },
+        // Open settings modal using a draft copy so edits are safe until committed
+        openSettings() {
+            // deep copy to avoid mutating the live settings prematurely
+            this.settingsDraft = JSON.parse(JSON.stringify(this.settings || {}));
+            this.showSettings = true;
+        },
+        // Commit draft into live settings and persist
+        commitSettings() {
+            if (!this.settingsDraft) return;
+            this.settings = { ...this.settings, ...this.settingsDraft };
+            this.saveSettings();
+            this.settingsDraft = null;
+            this.showSettings = false;
+            // ensure timer length reflects new settings
+            this.resetTimer();
+        },
+        // Cancel editing settings
+        cancelSettings() {
+            this.settingsDraft = null;
+            this.showSettings = false;
+        },
         loadSettings() {
             const saved = localStorage.getItem('pomodoroSettings');
             if (saved) {
@@ -500,7 +522,9 @@ createApp({
                 if (key === 's') {
                     if (!(this.showDashboardModal || this.showLogViewer) || this.showSettings) {
                         event.preventDefault();
-                        this.showSettings = !this.showSettings;
+                        // use openSettings/cancelSettings so the draft model is created/cleared correctly
+                        if (this.showSettings) this.cancelSettings();
+                        else this.openSettings();
                     }
                 }
 

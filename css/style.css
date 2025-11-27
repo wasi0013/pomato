@@ -91,9 +91,9 @@ header h1 {
 /* richer hover for icon buttons */
 .icon-btn:hover { transform: translateY(-4px) scale(1.06); box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
 
-/* Modal open animation */
+/* Modal open animation: modal content is hidden by default then shown when inside a .modal */
 .modal-content { opacity: 0; transform: translateY(8px) scale(0.996); transition: opacity 360ms ease, transform 360ms ease; }
-.modal[style] .modal-content, .modal.show .modal-content, .modal-content.log-modal, .modal-content.dashboard-modal { opacity: 1; transform: translateY(0) scale(1); }
+.modal .modal-content, .modal.show .modal-content, .modal-content.log-modal, .modal-content.dashboard-modal { opacity: 1; transform: translateY(0) scale(1); }
 
 /* Panels fade/slide in inside dashboard */
 .dashboard-modal .panel { opacity: 0; transform: translateY(6px); transition: opacity 420ms ease, transform 420ms ease; }
@@ -136,6 +136,92 @@ header h1 {
     margin-top: 6px;
     outline: none;
     transition: box-shadow 150ms ease, transform 120ms ease;
+}
+
+/* Range slider styling */
+.modal-content input[type="range"] {
+    width: 100%;
+    margin-top: 8px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: transparent;
+    height: 28px;
+    position: relative;
+    z-index: 2;
+}
+.modal-content input[type="range"]:focus { outline: none; }
+.modal-content input[type="range"]::-webkit-slider-runnable-track {
+    height: 8px;
+    background: linear-gradient(90deg,var(--accent),var(--accent-2));
+    border-radius: 999px;
+}
+.modal-content input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    margin-top: -5px;
+}
+.modal-content input[type="range"]::-moz-range-track { height: 8px; background: linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius: 999px; }
+.modal-content input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 6px 18px rgba(0,0,0,0.4); border: none; }
+
+.range-row { display:flex; align-items:center; gap:12px; flex-direction:column; text-align:left; }
+.range-row .range-value { font-weight:700; color:var(--muted); background: rgba(255,255,255,0.02); padding:6px 8px; border-radius:8px; margin-left:auto; }
+.range-row { width:100%; }
+.range-row > input { width:100%; }
+
+/* Decorative track: base thin track plus a thicker blurred overlay at the right end */
+.range-row { position: relative; padding-top: 10px; }
+.range-row::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%; transform: translateY(-50%);
+    height: 8px; border-radius: 999px;
+    background: rgba(255,255,255,0.03);
+    pointer-events: none;
+}
+
+.range-row::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 50%; transform: translateY(-50%);
+    width: 48%; height: 14px; border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(0,0,0,0.02));
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    filter: blur(6px); opacity: 0.55; pointer-events: none;
+}
+
+/* Use the accent color to tint the right overlay (gives the thicker-to-right visual) */
+.range-row .track-tint {
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 0%; height: 12px; border-radius: 999px; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255,255,255,0.02), var(--accent));
+    filter: blur(6px);
+    opacity: 0.95;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.28), 0 0 36px rgba(0,0,0,0.08) inset;
+    transition: width 420ms cubic-bezier(.2,.9,.3,1), background 320ms ease, box-shadow 320ms ease;
+    z-index: 1;
+}
+
+/* Make the native track transparent so decorative layers show through */
+.modal-content input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
+.modal-content input[type="range"]::-moz-range-track { background: transparent; }
+
+/* Thumb and badge animations */
+.modal-content input[type="range"]::-webkit-slider-thumb { transition: transform 120ms ease, box-shadow 120ms ease; }
+.modal-content input[type="range"]::-moz-range-thumb { transition: transform 120ms ease, box-shadow 120ms ease; }
+.modal-content input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); box-shadow: 0 14px 34px rgba(0,0,0,0.45); }
+.modal-content input[type="range"]:active::-moz-range-thumb { transform: scale(1.12); box-shadow: 0 14px 34px rgba(0,0,0,0.45); }
+
+/* Value badge pops when slider is focused/active */
+.modal-content input[type="range"]:focus + .range-value,
+.modal-content input[type="range"]:active + .range-value {
+    transform: translateY(-6px) scale(1.06);
+    transition: transform 140ms ease, color 120ms ease, background 180ms ease;
+    color: #fff;
+    background: linear-gradient(90deg,var(--accent),var(--accent-2));
+    box-shadow: 0 8px 26px rgba(0,0,0,0.32);
 }
 .modal-content input:focus, .modal-content textarea:focus, .modal-content select:focus {
     box-shadow: 0 8px 36px rgba(0,0,0,0.6);
