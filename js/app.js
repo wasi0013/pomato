@@ -81,14 +81,31 @@ createApp({
         startTimer() {
             if (this.isRunning) return;
             this.isRunning = true;
+            const now = new Date().toISOString();
             if (!this.currentActivity) {
                 this.currentActivity = {
                     mode: this.currentMode,
                     title: this.currentMode === 'Work' ? this.settings.title : null,
-                    start: new Date().toISOString(),
-                    completed: false
+                    start: now,
+                    segments: [], // array of {start,end,elapsed}
+                    elapsed: 0,
+                    completed: false,
+                    segmentStart: now
                 };
+                // add draft activity to activities so it can be shown/updated
+                this.activities.push({ ...this.currentActivity });
+                this.saveActivities();
+            } else {
+                // resuming: start a new segment
+                this.currentActivity.segmentStart = now;
+                // update the activities array entry (last one)
+                const last = this.activities[this.activities.length - 1];
+                if (last && last.start === this.currentActivity.start) {
+                    last.segmentStart = now;
+                    this.saveActivities();
+                }
             }
+
             this.interval = setInterval(() => {
                 this.timeLeft--;
                 if (this.timeLeft <= 0) {
@@ -99,72 +116,120 @@ createApp({
         pauseTimer() {
             this.isRunning = false;
             clearInterval(this.interval);
-            if (this.currentActivity && !this.currentActivity.end) {
-                this.currentActivity.end = new Date().toISOString();
-                this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000);
-                this.currentActivity.completed = false;
-                this.activities.push({ ...this.currentActivity });
+            const now = new Date().toISOString();
+            if (this.currentActivity && this.currentActivity.segmentStart) {
+                const segStart = new Date(this.currentActivity.segmentStart);
+                const segEnd = new Date(now);
+                const segElapsed = Math.floor((segEnd - segStart) / 1000);
+                // add segment
+                this.currentActivity.segments.push({ start: this.currentActivity.segmentStart, end: now, elapsed: segElapsed });
+                this.currentActivity.elapsed = (this.currentActivity.elapsed || 0) + segElapsed;
+                this.currentActivity.segmentStart = null;
+                // update activities array (last entry)
+                const last = this.activities[this.activities.length - 1];
+                if (last && last.start === this.currentActivity.start) {
+                    last.segments = this.currentActivity.segments.slice();
+                    last.elapsed = this.currentActivity.elapsed;
+                    last.segmentStart = null;
+                    last.completed = false;
+                } else {
+                    // push if not present
+                    this.activities.push({ ...this.currentActivity });
+                }
                 this.saveActivities();
-                this.currentActivity = null;
             }
         },
         resetTimer() {
-            this.pauseTimer();
+            // on reset we discard the current activity (do not save incomplete draft)
+            clearInterval(this.interval);
+            this.isRunning = false;
             this.timeLeft = this.getTotalTimeForMode();
+            if (this.currentActivity) {
+                // remove the draft activity from activities if present and not completed
+                const idx = this.activities.findIndex(a => a.start === this.currentActivity.start && !a.completed);
+                if (idx !== -1) {
+                    this.activities.splice(idx, 1);
+                    this.saveActivities();
+                }
+            }
             this.currentActivity = null; // reset doesn't save
         },
         setMode(mode) {
+            // switching mode: finalize any current segment and mark as not completed
+            const now = new Date().toISOString();
             if (this.currentActivity) {
-                this.currentActivity.end = new Date().toISOString();
-                this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000);
+                if (this.currentActivity.segmentStart) {
+                    const segStart = new Date(this.currentActivity.segmentStart);
+                    const segEnd = new Date(now);
+                    const segElapsed = Math.floor((segEnd - segStart) / 1000);
+                    this.currentActivity.segments.push({ start: this.currentActivity.segmentStart, end: now, elapsed: segElapsed });
+                    this.currentActivity.elapsed = (this.currentActivity.elapsed || 0) + segElapsed;
+                    this.currentActivity.segmentStart = null;
+                }
+                this.currentActivity.end = now;
                 this.currentActivity.completed = false; // switched, not completed
-                this.activities.push({ ...this.currentActivity });
+                // update or push
+                const last = this.activities[this.activities.length - 1];
+                if (last && last.start === this.currentActivity.start) {
+                    Object.assign(last, { ...this.currentActivity });
+                } else {
+                    this.activities.push({ ...this.currentActivity });
+                }
                 this.saveActivities();
+                this.currentActivity = null;
             }
             this.currentMode = mode;
             this.currentActivity = {
                 mode: this.currentMode,
                 title: this.currentMode === 'Work' ? this.settings.title : null,
                 start: new Date().toISOString(),
-                completed: false
+                segments: [],
+                elapsed: 0,
+                completed: false,
+                segmentStart: null
             };
             this.resetTimer();
         },
         timerFinished() {
-            // stop the running interval without triggering pause logic
             clearInterval(this.interval);
             this.isRunning = false;
+            const now = new Date().toISOString();
 
-            // mark the current activity as completed and save it
-            if (this.currentActivity && !this.currentActivity.end) {
-                this.currentActivity.end = new Date().toISOString();
-                // compute elapsed based on timestamps to be accurate across pauses
-                this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000) || this.getTotalTimeForMode();
+            // finalize any running segment and mark completed
+            if (this.currentActivity) {
+                if (this.currentActivity.segmentStart) {
+                    const segStart = new Date(this.currentActivity.segmentStart);
+                    const segEnd = new Date(now);
+                    const segElapsed = Math.floor((segEnd - segStart) / 1000);
+                    this.currentActivity.segments.push({ start: this.currentActivity.segmentStart, end: now, elapsed: segElapsed });
+                    this.currentActivity.elapsed = (this.currentActivity.elapsed || 0) + segElapsed;
+                    this.currentActivity.segmentStart = null;
+                }
+                this.currentActivity.end = now;
                 this.currentActivity.completed = true;
-                this.activities.push({ ...this.currentActivity });
+                // update last or push
+                const last = this.activities[this.activities.length - 1];
+                if (last && last.start === this.currentActivity.start) {
+                    Object.assign(last, { ...this.currentActivity });
+                } else {
+                    this.activities.push({ ...this.currentActivity });
+                }
                 this.saveActivities();
                 this.currentActivity = null;
             }
 
-            if (this.settings.notifications) {
-                this.showNotification();
-            }
-            if (this.settings.sound) {
-                this.playSound();
-            }
+            if (this.settings.notifications) this.showNotification();
+            if (this.settings.sound) this.playSound();
 
-            // switch mode (will start a fresh activity for the next mode)
             this.switchMode();
-            if (this.settings.autoStart) {
-                this.startTimer();
-            }
+            if (this.settings.autoStart) this.startTimer();
         },
         switchMode() {
-            // Determine next mode based on completed work activities
+            // Determine next mode using completed work activities
             const completedWork = this.activities.filter(a => a.mode === 'Work' && a.completed).length;
             if (this.currentMode === 'Work') {
-                // if the number of completed work sessions is a multiple of 4, go to long break
-                if ((completedWork) % 4 === 0) {
+                // after work go to break; choose long break when completedWork is multiple of sessionsBeforeLong
+                if (this.settings.sessionsBeforeLong && (completedWork % this.settings.sessionsBeforeLong) === 0 && completedWork > 0) {
                     this.currentMode = 'Long Break';
                 } else {
                     this.currentMode = 'Short Break';
@@ -173,12 +238,25 @@ createApp({
                 this.currentMode = 'Work';
             }
 
-            // If any current activity still exists (should be rare), mark and save it
+            // If any current activity still exists (rare), finalize it
             if (this.currentActivity && !this.currentActivity.end) {
-                this.currentActivity.end = new Date().toISOString();
-                this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000);
+                const now = new Date().toISOString();
+                if (this.currentActivity.segmentStart) {
+                    const segStart = new Date(this.currentActivity.segmentStart);
+                    const segEnd = new Date(now);
+                    const segElapsed = Math.floor((segEnd - segStart) / 1000);
+                    this.currentActivity.segments.push({ start: this.currentActivity.segmentStart, end: now, elapsed: segElapsed });
+                    this.currentActivity.elapsed = (this.currentActivity.elapsed || 0) + segElapsed;
+                    this.currentActivity.segmentStart = null;
+                }
+                this.currentActivity.end = now;
                 this.currentActivity.completed = true;
-                this.activities.push({ ...this.currentActivity });
+                const last = this.activities[this.activities.length - 1];
+                if (last && last.start === this.currentActivity.start) {
+                    Object.assign(last, { ...this.currentActivity });
+                } else {
+                    this.activities.push({ ...this.currentActivity });
+                }
                 this.saveActivities();
                 this.currentActivity = null;
             }
@@ -188,7 +266,10 @@ createApp({
                 mode: this.currentMode,
                 title: this.currentMode === 'Work' ? this.settings.title : null,
                 start: new Date().toISOString(),
-                completed: false
+                segments: [],
+                elapsed: 0,
+                completed: false,
+                segmentStart: null
             };
             this.resetTimer();
         },
