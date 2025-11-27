@@ -3,20 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro Timer</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Pomato Timer</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3e%3ccircle cx='25' cy='30' r='20' fill='%23ff6b6b'/%3e%3cellipse cx='25' cy='15' rx='3' ry='8' fill='%23228B22'/%3e%3c/svg%3e">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <header>
+        <h1>
+            P<svg width="40" height="40" viewBox="0 0 50 50" style="margin:0;">
+                <circle cx="25" cy="30" r="20" fill="#ff6b6b"/>
+                <ellipse cx="25" cy="15" rx="3" ry="8" fill="#228B22"/>
+            </svg>mato Timer
+        </h1>
+    </header>
     <div id="app">
-        <header>
-            <h1>Pomodoro Timer</h1>
-        </header>
         <main>
+            <div class="tabs">
+                <button @click="setMode('Work')" :class="{ active: currentMode === 'Work' }">{{ settings.title }}</button>
+                <button @click="setMode('Short Break')" :class="{ active: currentMode === 'Short Break' }">Short Break</button>
+                <button @click="setMode('Long Break')" :class="{ active: currentMode === 'Long Break' }">Long Break</button>
+            </div>
             <div class="timer">
-                <svg width="300" height="300" viewBox="0 0 300 300">
-                    <circle cx="150" cy="150" r="140" stroke="#ddd" stroke-width="10" fill="none"/>
-                    <circle cx="150" cy="150" r="140" stroke="#ff6b6b" stroke-width="10" fill="none" stroke-dasharray="879.6" stroke-dashoffset="0" transform="rotate(-90 150 150)" :stroke-dashoffset="dashOffset"/>
-                </svg>
                 <div class="time-display">{{ formattedTime }}</div>
                 <div class="status">{{ currentMode === 'Work' ? settings.title : currentMode }}</div>
                 <div class="controls">
@@ -26,16 +33,18 @@
                 </div>
             </div>
             <div class="settings">
-                <button @click="showSettings = true">Settings</button>
-                <button @click="showDashboard = !showDashboard">Dashboard</button>
+                <button @click="showSettings = true" class="icon-btn">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L19 6.6C18.8 6 18.5 5.4 18.1 4.9L19 3L17 1L15.4 1.9C14.9 1.5 14.3 1.2 13.7 1L13 0H11L10.3 1C9.7 1.2 9.1 1.5 8.6 1.9L7 1L5 3L5.9 4.9C5.5 5.4 5.2 6 5 6.6L3 7V9L5 9.4C5.2 10 5.5 10.6 5.9 11.1L5 13L7 15L8.6 14.1C9.1 14.5 9.7 14.8 10.3 15L11 16H13L13.7 15C14.3 14.8 14.9 14.5 15.4 14.1L17 15L19 13L18.1 11.1C18.5 10.6 18.8 10 19 9.4L21 9ZM12 8C13.66 8 15 9.34 15 11C15 12.66 13.66 14 12 14C10.34 14 9 12.66 9 11C9 9.34 10.34 8 12 8Z"/>
+                    </svg>
+                </button>
+                <button @click="showDashboardModal = true" class="icon-btn">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <path d="M5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3ZM7 17H9V13H7V17ZM11 17H13V7H11V17ZM15 17H17V10H15V17Z"/>
+                    </svg>
+                </button>
             </div>
         </main>
-        <div v-if="showDashboard" class="dashboard">
-            <h2>Dashboard</h2>
-            <p>Total Sessions: {{ sessionCount }}</p>
-            <p>Total Pomodoros: {{ completedPomodoros }}</p>
-            <canvas id="chart"></canvas>
-        </div>
         <div v-if="showSettings" class="modal">
             <div class="modal-content">
                 <h2>Settings</h2>
@@ -48,6 +57,15 @@
                 <label>Sound: <input v-model="settings.sound" type="checkbox"></label>
                 <button @click="saveSettings">Save</button>
                 <button @click="showSettings = false">Cancel</button>
+            </div>
+        </div>
+        <div v-if="showDashboardModal" class="modal">
+            <div class="modal-content dashboard-modal">
+                <h2>Dashboard</h2>
+                <p>Total Sessions: {{ sessionCount }}</p>
+                <p>Total Pomodoros: {{ completedPomodoros }}</p>
+                <canvas id="chart"></canvas>
+                <button @click="showDashboardModal = false" class="close-btn">Close</button>
             </div>
         </div>
     </div>

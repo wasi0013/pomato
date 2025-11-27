@@ -8,7 +8,7 @@ createApp({
             isRunning: false,
             interval: null,
             showSettings: false,
-            showDashboard: false,
+            showDashboardModal: false,
             settings: {
                 title: 'Work',
                 work: 13,
@@ -32,7 +32,10 @@ createApp({
         dashOffset() {
             const totalTime = this.getTotalTimeForMode();
             const progress = (totalTime - this.timeLeft) / totalTime;
-            return 879.6 * progress; // circumference of circle
+            return 0; // no circle
+        },
+        dynamicTitle() {
+            return `${this.currentMode === 'Work' ? this.settings.title : this.currentMode} ${this.formattedTime}`;
         }
     },
     mounted() {
@@ -40,6 +43,12 @@ createApp({
         this.loadSessions();
         this.resetTimer();
         this.renderChart();
+        document.title = this.dynamicTitle;
+    },
+    watch: {
+        dynamicTitle(newTitle) {
+            document.title = newTitle;
+        }
     },
     methods: {
         getTotalTimeForMode() {
@@ -67,6 +76,10 @@ createApp({
         resetTimer() {
             this.pauseTimer();
             this.timeLeft = this.getTotalTimeForMode();
+        },
+        setMode(mode) {
+            this.currentMode = mode;
+            this.resetTimer();
         },
         timerFinished() {
             this.pauseTimer();
@@ -110,8 +123,8 @@ createApp({
             }
         },
         playSound() {
-            const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.wav'); // placeholder sound
-            audio.play();
+            const audio = new Audio('sounds/ting.mp3');
+            audio.play().catch(e => console.log('Sound play failed:', e));
         },
         saveSettings() {
             localStorage.setItem('pomodoroSettings', JSON.stringify(this.settings));
