@@ -26,6 +26,9 @@ createApp({
             },
             completedPomodoros: 0,
             sessionCount: 0,
+            totalWorkMinutes: 0,
+            totalBreakMinutes: 0,
+            totalBreaksTaken: 0,
             sessions: [] // keep for backward compatibility
         };
     },
@@ -62,6 +65,8 @@ createApp({
         this.resetTimer();
         this.renderChart();
         document.title = this.dynamicTitle;
+        // apply initial mode class to body for themed backgrounds
+        this.applyModeClass(this.currentMode);
         // register keyboard shortcut for play/pause (Space)
         window.addEventListener('keydown', this.onKeydown);
         this.loading = false;
@@ -79,6 +84,10 @@ createApp({
                     this.renderChart();
                 });
             }
+        }
+        ,
+        currentMode(newMode) {
+            this.applyModeClass(newMode);
         }
     },
     methods: {
@@ -323,8 +332,32 @@ createApp({
         },
         updateStats() {
             const workActivities = this.activities.filter(a => a.mode === 'Work' && a.completed);
+            const breakActivities = this.activities.filter(a => (a.mode === 'Short Break' || a.mode === 'Long Break') && a.completed);
             this.completedPomodoros = workActivities.length;
             this.sessionCount = Math.floor(this.completedPomodoros / 4);
+            // total minutes of completed work and breaks (elapsed stored in seconds)
+            this.totalWorkMinutes = Math.round(workActivities.reduce((sum, a) => sum + (a.elapsed || 0), 0) / 60);
+            this.totalBreakMinutes = Math.round(breakActivities.reduce((sum, a) => sum + (a.elapsed || 0), 0) / 60);
+            this.totalBreaksTaken = breakActivities.length;
+        },
+        applyModeClass(mode) {
+            // normalize mode into class names
+            const map = {
+                'Work': 'mode-work',
+                'Short Break': 'mode-short-break',
+                'Long Break': 'mode-long-break'
+            };
+            const cls = map[mode] || 'mode-work';
+            document.body.classList.remove('mode-work', 'mode-short-break', 'mode-long-break');
+            document.body.classList.add(cls);
+        },
+        // Format minutes into "Hh Mm" or "Xm" string
+        formatMinutes(totalMinutes) {
+            if (!totalMinutes || totalMinutes <= 0) return '0m';
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            if (hours > 0) return `${hours}h ${mins}m`;
+            return `${mins}m`;
         },
         renderChart() {
             if (this.activities.length === 0) return;
@@ -355,31 +388,44 @@ createApp({
                         }
                     }
                 });
+                // animate canvas (reflow then add class)
+                try {
+                    lineCtx.classList.remove('chart-appear');
+                    void lineCtx.offsetWidth;
+                    lineCtx.classList.add('chart-appear');
+                } catch (e) { /* ignore if DOM not ready */ }
             }
 
-            // Bar Chart for Session History
+            // Bar Chart for Session History (aggregate by day)
             const ctx = document.getElementById('chart');
             if (ctx) {
                 if (this.chartInstance) this.chartInstance.destroy();
+                const dailyData = this.getDailyData();
                 this.chartInstance = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: this.activities.filter(a => a.mode === 'Work' && a.completed).map(a => new Date(a.start).toLocaleDateString()),
+                        labels: dailyData.labels,
                         datasets: [{
                             label: 'Completed Work Sessions',
-                            data: this.activities.filter(a => a.mode === 'Work' && a.completed).map(a => 1),
-                            backgroundColor: '#ff6b6b'
+                            data: dailyData.data,
+                            backgroundColor: dailyData.data.map(() => '#ff6b6b')
                         }]
                     },
                     options: {
                         responsive: true,
                         scales: {
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
                             }
                         }
                     }
                 });
+                try {
+                    ctx.classList.remove('chart-appear');
+                    void ctx.offsetWidth;
+                    ctx.classList.add('chart-appear');
+                } catch (e) { /* ignore if DOM not ready */ }
             }
         },
         onKeydown(event) {
@@ -395,6 +441,26 @@ createApp({
                 event.preventDefault();
                 if (this.isRunning) this.pauseTimer();
                 else this.startTimer();
+            }
+
+            // Left/Right arrows: switch tabs in natural order (Work -> Short Break -> Long Break)
+            if (event.code === 'ArrowRight' || event.code === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                // ignore when modals are open
+                if (this.showSettings || this.showDashboardModal || this.showLogViewer) return;
+                const active = document.activeElement;
+                if (active) {
+                    const tag = (active.tagName || '').toUpperCase();
+                    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) return;
+                }
+                const modes = ['Work', 'Short Break', 'Long Break'];
+                const cur = modes.indexOf(this.currentMode) !== -1 ? modes.indexOf(this.currentMode) : 0;
+                let next = cur;
+                if (event.code === 'ArrowRight' || event.key === 'ArrowRight') next = (cur + 1) % modes.length;
+                if (event.code === 'ArrowLeft' || event.key === 'ArrowLeft') next = (cur - 1 + modes.length) % modes.length;
+                if (next !== cur) {
+                    event.preventDefault();
+                    this.setMode(modes[next]);
+                }
             }
 
             // Reset shortcut: plain 'r' (no modifiers) — avoid Ctrl/Shift/Cmd combos
