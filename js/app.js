@@ -9,6 +9,8 @@ createApp({
             interval: null,
             showSettings: false,
             showDashboardModal: false,
+            chartInstance: null,
+            lineChartInstance: null,
             settings: {
                 title: 'Work',
                 work: 13,
@@ -36,6 +38,11 @@ createApp({
         },
         dynamicTitle() {
             return `${this.currentMode === 'Work' ? this.settings.title : this.currentMode} ${this.formattedTime}`;
+        },
+        progressPercent() {
+            const totalTime = this.getTotalTimeForMode();
+            const elapsed = totalTime - this.timeLeft;
+            return Math.min((elapsed / totalTime) * 100, 100);
         }
     },
     mounted() {
@@ -48,6 +55,13 @@ createApp({
     watch: {
         dynamicTitle(newTitle) {
             document.title = newTitle;
+        },
+        showDashboardModal(newVal) {
+            if (newVal) {
+                this.$nextTick(() => {
+                    this.renderChart();
+                });
+            }
         }
     },
     methods: {
@@ -150,29 +164,70 @@ createApp({
             this.completedPomodoros = this.sessions.reduce((sum, s) => sum + s.pomodoros, 0);
         },
         renderChart() {
-            const ctx = document.getElementById('chart');
-            if (!ctx) return;
-            const dates = this.sessions.map(s => new Date(s.date).toLocaleDateString());
-            const pomodoros = this.sessions.map(s => s.pomodoros);
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Pomodoros per Session',
-                        data: pomodoros,
-                        backgroundColor: '#ff6b6b'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
+            if (this.sessions.length === 0) return;
+
+            // Line Chart for Daily Progress
+            const lineCtx = document.getElementById('lineChart');
+            if (lineCtx) {
+                if (this.lineChartInstance) this.lineChartInstance.destroy();
+                const dailyData = this.getDailyData();
+                this.lineChartInstance = new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: dailyData.labels,
+                        datasets: [{
+                            label: 'Pomodoros per Day',
+                            data: dailyData.data,
+                            borderColor: '#ff6b6b',
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
                         }
                     }
-                }
+                });
+            }
+
+            // Bar Chart for Session History
+            const ctx = document.getElementById('chart');
+            if (ctx) {
+                if (this.chartInstance) this.chartInstance.destroy();
+                this.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: this.sessions.map(s => new Date(s.date).toLocaleDateString()),
+                        datasets: [{
+                            label: 'Pomodoros per Session',
+                            data: this.sessions.map(s => s.pomodoros),
+                            backgroundColor: '#ff6b6b'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        },
+        getDailyData() {
+            const daily = {};
+            this.sessions.forEach(session => {
+                const date = new Date(session.date).toLocaleDateString();
+                daily[date] = (daily[date] || 0) + session.pomodoros;
             });
+            const labels = Object.keys(daily).sort((a, b) => new Date(a) - new Date(b));
+            const data = labels.map(date => daily[date]);
+            return { labels, data };
         }
     }
 }).mount('#app');

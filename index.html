@@ -64,7 +64,17 @@
                 <h2>Dashboard</h2>
                 <p>Total Sessions: {{ sessionCount }}</p>
                 <p>Total Pomodoros: {{ completedPomodoros }}</p>
-                <canvas id="chart"></canvas>
+                <div class="progress-bar">
+                    <div class="progress" :style="{width: progressPercent + '%'}"></div>
+                    <span class="progress-text">{{ Math.round(progressPercent) }}% Complete</span>
+                </div>
+                <div v-if="sessions.length === 0" class="no-data">No sessions yet. Complete some pomodoros to see your progress!</div>
+                <div v-else>
+                    <h3>Daily Progress</h3>
+                    <canvas id="lineChart"></canvas>
+                    <h3>Session History</h3>
+                    <canvas id="chart"></canvas>
+                </div>
                 <button @click="showDashboardModal = false" class="close-btn">Close</button>
             </div>
         </div>
