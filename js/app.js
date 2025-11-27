@@ -3,6 +3,7 @@ const { createApp } = Vue;
 createApp({
     data() {
         return {
+            loading: true,
             currentMode: 'Work',
             timeLeft: 13 * 60, // seconds
             isRunning: false,
@@ -53,6 +54,7 @@ createApp({
         this.resetTimer();
         this.renderChart();
         document.title = this.dynamicTitle;
+        this.loading = false;
     },
     watch: {
         dynamicTitle(newTitle) {

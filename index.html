@@ -10,13 +10,18 @@
 <body>
     <header>
         <h1>
-            P<svg width="40" height="40" viewBox="0 0 50 50" style="margin:0;">
+            P<svg width="40" height="40" viewBox="0 0 50 50" style="margin:0; vertical-align: middle;">
                 <circle cx="25" cy="30" r="20" fill="#ff6b6b"/>
                 <ellipse cx="25" cy="15" rx="3" ry="8" fill="#228B22"/>
             </svg>mato Timer
         </h1>
     </header>
     <div id="app">
+        <div v-if="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading Pomato Timer...</p>
+        </div>
+        <main v-else>
         <main>
             <div class="tabs">
                 <button @click="setMode('Work')" :class="{ active: currentMode === 'Work' }">{{ settings.title }}</button>
