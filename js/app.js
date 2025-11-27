@@ -41,13 +41,15 @@ createApp({
             return 0; // no circle
         },
         dynamicTitle() {
-            return `${this.currentMode === 'Work' ? this.settings.title : this.currentMode} ${this.formattedTime}`;
+            // Keep on-screen/document title generic — use 'Work' rather than user title
+            return `${this.currentMode === 'Work' ? 'Work' : this.currentMode} ${this.formattedTime}`;
         },
         progressPercent() {
             const totalTime = this.getTotalTimeForMode();
             const elapsed = totalTime - this.timeLeft;
             return Math.min((elapsed / totalTime) * 100, 100);
         }
+        
     },
     mounted() {
         this.loadSettings();

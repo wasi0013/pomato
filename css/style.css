@@ -282,7 +282,11 @@ header h1 {
     max-height: 400px;
     overflow-y: auto;
     margin: 20px 0;
+    /* hide native scrollbar while preserving scroll */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
 }
+.log-list::-webkit-scrollbar { display: none; width: 0; height: 0; } /* Chrome, Safari, Opera */
 
 .log-entry {
     background: rgba(255, 255, 255, 0.05);
