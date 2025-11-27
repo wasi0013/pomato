@@ -11,6 +11,8 @@ createApp({
             showDashboardModal: false,
             chartInstance: null,
             lineChartInstance: null,
+            currentActivity: null,
+            activities: [],
             settings: {
                 title: 'Work',
                 work: 13,
@@ -22,7 +24,7 @@ createApp({
             },
             completedPomodoros: 0,
             sessionCount: 0,
-            sessions: []
+            sessions: [] // keep for backward compatibility
         };
     },
     computed: {
@@ -47,7 +49,7 @@ createApp({
     },
     mounted() {
         this.loadSettings();
-        this.loadSessions();
+        this.loadActivities();
         this.resetTimer();
         this.renderChart();
         document.title = this.dynamicTitle;
@@ -76,6 +78,14 @@ createApp({
         startTimer() {
             if (this.isRunning) return;
             this.isRunning = true;
+            if (!this.currentActivity) {
+                this.currentActivity = {
+                    mode: this.currentMode,
+                    title: this.currentMode === 'Work' ? this.settings.title : null,
+                    start: new Date().toISOString(),
+                    completed: false
+                };
+            }
             this.interval = setInterval(() => {
                 this.timeLeft--;
                 if (this.timeLeft <= 0) {
@@ -86,13 +96,34 @@ createApp({
         pauseTimer() {
             this.isRunning = false;
             clearInterval(this.interval);
+            if (this.currentActivity && !this.currentActivity.end) {
+                this.currentActivity.end = new Date().toISOString();
+                this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000);
+                this.activities.push({ ...this.currentActivity });
+                this.saveActivities();
+                this.currentActivity = null;
+            }
         },
         resetTimer() {
             this.pauseTimer();
             this.timeLeft = this.getTotalTimeForMode();
+            this.currentActivity = null; // reset doesn't save
         },
         setMode(mode) {
+            if (this.currentActivity) {
+                this.currentActivity.end = new Date().toISOString();
+                this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000);
+                this.currentActivity.completed = false; // switched, not completed
+                this.activities.push({ ...this.currentActivity });
+                this.saveActivities();
+            }
             this.currentMode = mode;
+            this.currentActivity = {
+                mode: this.currentMode,
+                title: this.currentMode === 'Work' ? this.settings.title : null,
+                start: new Date().toISOString(),
+                completed: false
+            };
             this.resetTimer();
         },
         timerFinished() {
@@ -103,12 +134,21 @@ createApp({
             if (this.settings.sound) {
                 this.playSound();
             }
+            if (this.currentActivity) {
+                this.currentActivity.end = new Date().toISOString();
+                this.currentActivity.elapsed = this.getTotalTimeForMode();
+                this.currentActivity.completed = true;
+                this.activities.push({ ...this.currentActivity });
+                this.saveActivities();
+                this.currentActivity = null;
+            }
             this.switchMode();
             if (this.settings.autoStart) {
                 this.startTimer();
             }
         },
         switchMode() {
+            const prevMode = this.currentMode;
             if (this.currentMode === 'Work') {
                 this.completedPomodoros++;
                 if (this.completedPomodoros % 4 === 0) {
@@ -123,6 +163,20 @@ createApp({
                     this.saveSession();
                 }
             }
+            // Complete current activity and start new
+            if (this.currentActivity) {
+                this.currentActivity.end = new Date().toISOString();
+                this.currentActivity.elapsed = Math.floor((new Date(this.currentActivity.end) - new Date(this.currentActivity.start)) / 1000);
+                this.currentActivity.completed = true;
+                this.activities.push({ ...this.currentActivity });
+                this.saveActivities();
+            }
+            this.currentActivity = {
+                mode: this.currentMode,
+                title: this.currentMode === 'Work' ? this.settings.title : null,
+                start: new Date().toISOString(),
+                completed: false
+            };
             this.resetTimer();
         },
         showNotification() {
@@ -151,20 +205,20 @@ createApp({
                 this.settings = { ...this.settings, ...JSON.parse(saved) };
             }
         },
-        saveSession() {
-            const sessions = JSON.parse(localStorage.getItem('pomodoroSessions') || '[]');
-            sessions.push({ date: new Date().toISOString(), pomodoros: 4 });
-            localStorage.setItem('pomodoroSessions', JSON.stringify(sessions));
-            this.loadSessions();
-            this.renderChart();
+        saveActivities() {
+            localStorage.setItem('pomodoroActivities', JSON.stringify(this.activities));
         },
-        loadSessions() {
-            this.sessions = JSON.parse(localStorage.getItem('pomodoroSessions') || '[]');
-            this.sessionCount = this.sessions.length;
-            this.completedPomodoros = this.sessions.reduce((sum, s) => sum + s.pomodoros, 0);
+        loadActivities() {
+            this.activities = JSON.parse(localStorage.getItem('pomodoroActivities') || '[]');
+            this.updateStats();
+        },
+        updateStats() {
+            const workActivities = this.activities.filter(a => a.mode === 'Work' && a.completed);
+            this.completedPomodoros = workActivities.length;
+            this.sessionCount = Math.floor(this.completedPomodoros / 4);
         },
         renderChart() {
-            if (this.sessions.length === 0) return;
+            if (this.activities.length === 0) return;
 
             // Line Chart for Daily Progress
             const lineCtx = document.getElementById('lineChart');
@@ -201,10 +255,10 @@ createApp({
                 this.chartInstance = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: this.sessions.map(s => new Date(s.date).toLocaleDateString()),
+                        labels: this.activities.filter(a => a.mode === 'Work' && a.completed).map(a => new Date(a.start).toLocaleDateString()),
                         datasets: [{
-                            label: 'Pomodoros per Session',
-                            data: this.sessions.map(s => s.pomodoros),
+                            label: 'Completed Work Sessions',
+                            data: this.activities.filter(a => a.mode === 'Work' && a.completed).map(a => 1),
                             backgroundColor: '#ff6b6b'
                         }]
                     },
@@ -221,9 +275,9 @@ createApp({
         },
         getDailyData() {
             const daily = {};
-            this.sessions.forEach(session => {
-                const date = new Date(session.date).toLocaleDateString();
-                daily[date] = (daily[date] || 0) + session.pomodoros;
+            this.activities.filter(a => a.mode === 'Work' && a.completed).forEach(activity => {
+                const date = new Date(activity.start).toLocaleDateString();
+                daily[date] = (daily[date] || 0) + 1;
             });
             const labels = Object.keys(daily).sort((a, b) => new Date(a) - new Date(b));
             const data = labels.map(date => daily[date]);
