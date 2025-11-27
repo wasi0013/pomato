@@ -41,8 +41,13 @@ createApp({
             return 0; // no circle
         },
         dynamicTitle() {
-            // Keep on-screen/document title generic — use 'Work' rather than user title
-            return `${this.currentMode === 'Work' ? 'Work' : this.currentMode} ${this.formattedTime}`;
+            // Include a small emoji to make mode changes more noticeable in the document title
+            let emoji = '⏱️';
+            if (this.currentMode === 'Work') emoji = '';
+            else if (this.currentMode === 'Short Break') emoji = '☕';
+            else if (this.currentMode === 'Long Break') emoji = '⏱️';
+            const label = this.currentMode === 'Work' ? 'Work' : this.currentMode;
+            return `${emoji} ${label} ${this.formattedTime}`;
         },
         progressPercent() {
             const totalTime = this.getTotalTimeForMode();
