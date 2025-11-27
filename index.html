@@ -10,7 +10,7 @@
 <body>
     <header>
         <h1>
-            P<svg width="40" height="40" viewBox="0 0 50 50" style="margin:0; vertical-align: middle;">
+            P<svg width="40" height="40" viewBox="0 0 50 50" style="margin:0;">
                 <circle cx="25" cy="30" r="20" fill="#ff6b6b"/>
                 <ellipse cx="25" cy="15" rx="3" ry="8" fill="#228B22"/>
             </svg>mato Timer
@@ -32,9 +32,14 @@
                 <div class="time-display">{{ formattedTime }}</div>
                 <div class="status">{{ currentMode === 'Work' ? settings.title : currentMode }}</div>
                 <div class="controls">
-                    <button @click="startTimer" :disabled="isRunning">Start</button>
-                    <button @click="pauseTimer" :disabled="!isRunning">Pause</button>
-                    <button @click="resetTimer">Reset</button>
+                    <!-- When not running (paused or fresh), show Start -->
+                    <button v-if="!isRunning" @click="startTimer">Start</button>
+
+                    <!-- When running, show Pause + Reset -->
+                    <template v-else>
+                        <button @click="pauseTimer">Pause</button>
+                        <button @click="resetTimer">Reset</button>
+                    </template>
                 </div>
             </div>
             <div class="settings">

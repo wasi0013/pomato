@@ -62,7 +62,12 @@ createApp({
         this.resetTimer();
         this.renderChart();
         document.title = this.dynamicTitle;
+        // register keyboard shortcut for play/pause (Space)
+        window.addEventListener('keydown', this.onKeydown);
         this.loading = false;
+    },
+    beforeUnmount() {
+        window.removeEventListener('keydown', this.onKeydown);
     },
     watch: {
         dynamicTitle(newTitle) {
@@ -375,6 +380,80 @@ createApp({
                         }
                     }
                 });
+            }
+        },
+        onKeydown(event) {
+            // Toggle start/pause with Spacebar
+            if (event.code === 'Space' || event.key === ' ') {
+                // ignore when modals are open
+                if (this.showSettings || this.showDashboardModal || this.showLogViewer) return;
+                const active = document.activeElement;
+                if (active) {
+                    const tag = (active.tagName || '').toUpperCase();
+                    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) return;
+                }
+                event.preventDefault();
+                if (this.isRunning) this.pauseTimer();
+                else this.startTimer();
+            }
+
+            // Reset shortcut: plain 'r' (no modifiers) — avoid Ctrl/Shift/Cmd combos
+            if ((event.key && event.key.toLowerCase() === 'r') && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey) {
+                // ignore when modals are open
+                if (this.showSettings || this.showDashboardModal || this.showLogViewer) return;
+                const active = document.activeElement;
+                if (active) {
+                    const tag = (active.tagName || '').toUpperCase();
+                    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) return;
+                }
+                // perform reset
+                event.preventDefault();
+                this.resetTimer();
+            }
+
+            // Additional shortcuts: N = switch mode, S = settings, D = dashboard, L = log
+            // Only trigger on plain key presses (no modifiers) and when focus isn't in a form control.
+            const key = (event.key || '').toLowerCase();
+            const noModifiers = !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey;
+            if (noModifiers && key) {
+                const activeEl = document.activeElement;
+                if (activeEl) {
+                    const t = (activeEl.tagName || '').toUpperCase();
+                    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || activeEl.isContentEditable) return;
+                }
+
+                // N: switch mode (only when no modal open)
+                if (key === 'n') {
+                    if (!(this.showSettings || this.showDashboardModal || this.showLogViewer)) {
+                        event.preventDefault();
+                        this.switchMode();
+                    }
+                }
+
+                // S: toggle settings (allow closing if it's already open)
+                if (key === 's') {
+                    if (!(this.showDashboardModal || this.showLogViewer) || this.showSettings) {
+                        event.preventDefault();
+                        this.showSettings = !this.showSettings;
+                    }
+                }
+
+                // D: toggle dashboard (update chart when opening)
+                if (key === 'd') {
+                    if (!(this.showSettings || this.showLogViewer) || this.showDashboardModal) {
+                        event.preventDefault();
+                        this.showDashboardModal = !this.showDashboardModal;
+                        if (this.showDashboardModal) this.$nextTick(() => this.renderChart());
+                    }
+                }
+
+                // L: toggle log viewer
+                if (key === 'l') {
+                    if (!(this.showSettings || this.showDashboardModal) || this.showLogViewer) {
+                        event.preventDefault();
+                        this.showLogViewer = !this.showLogViewer;
+                    }
+                }
             }
         },
         getDailyData() {
