@@ -6,7 +6,7 @@
 [![Framework: Vue 3](https://img.shields.io/badge/Framework-Vue%203-41B883?logo=vue&logoColor=white)](https://vuejs.org/)
 [![Charting: Chart.js](https://img.shields.io/badge/Chart.js-3.9.1-FBAE17?logo=chart.js&logoColor=white)](https://www.chartjs.org/)
 [![Storage: localStorage](https://img.shields.io/badge/Storage-localStorage-563D7C?logo=html5&logoColor=white)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 Yet another, minimalist, elegant Pomodoro web app, no build step, just static files. Clean UI, session logging, and tiny analytics (charts) designed for fast focus sessions and easy deployment (Cloudflare Pages friendly).
 
@@ -88,7 +88,7 @@ Small, focused changes welcome. Open an issue or PR for feature requests (heatma
 
 ## License
 
-MIT — see `LICENSE`.
+GNU GPL v3 — see [LICENSE](\LICENSE) for full text.
 
 ---
 
