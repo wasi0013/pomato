@@ -8,15 +8,26 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <h1>
-            P<svg width="40" height="40" viewBox="0 0 50 50" style="margin:0;">
-                <circle cx="25" cy="30" r="20" fill="#ff6b6b"/>
-                <ellipse cx="25" cy="15" rx="3" ry="8" fill="#228B22"/>
-            </svg>mato Timer
-        </h1>
-    </header>
     <div id="app">
+        <header>
+            <div class="header-inner">
+                <h1>
+                    P<svg width="40" height="40" viewBox="0 0 50 50" style="margin:0;">
+                        <circle cx="25" cy="30" r="20" fill="#ff6b6b"/>
+                        <ellipse cx="25" cy="15" rx="3" ry="8" fill="#228B22"/>
+                    </svg>mato Timer
+                </h1>
+                <div class="header-actions">
+                    <button @click="openShortcuts" class="icon-btn help-btn" aria-label="Shortcuts"> 
+                        <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.6">
+                            <path d="M12 2v0" />
+                            <path d="M11 6h2v2h-2zM12 10a3 3 0 1 0 0 6" stroke-linecap="round" stroke-linejoin="round" />
+                            <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
         <div v-if="loading" class="loading">
             <div class="spinner"></div>
             <p>Loading Pomato Timer...</p>
@@ -171,6 +182,34 @@
                     </div>
                 </div>
                 <button @click="showLogViewer = false" class="close-btn">Close</button>
+            </div>
+        </div>
+        <div v-if="showAbout" class="modal">
+            <div class="modal-content">
+                <h2>About Pomato</h2>
+                <p>Pomato — a minimalist Pomodoro timer with activity logging and charts.</p>
+                <p style="color:var(--muted);margin-top:8px;">Version: local • Stored data in <code>localStorage</code>. Built with Vue 3 and Chart.js.</p>
+                <div class="modal-actions" style="margin-top:16px;">
+                    <button class="btn primary" @click="showAbout = false">Close</button>
+                </div>
+            </div>
+        </div>
+        <div v-if="showShortcuts" class="modal">
+            <div class="modal-content">
+                <h2>Keyboard Shortcuts</h2>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+                    <div class="shortcuts-kbd"><kbd>Space</kbd><div style="min-width:8px"></div><div>Start / Pause</div></div>
+                    <div class="shortcuts-kbd"><kbd>R</kbd><div style="min-width:8px"></div><div>Reset</div></div>
+                    <div class="shortcuts-kbd"><kbd>←</kbd><kbd>→</kbd><div style="min-width:8px"></div><div>Switch tabs (Work ↔ Short Break ↔ Long Break)</div></div>
+                    <div class="shortcuts-kbd"><kbd>N</kbd><div style="min-width:8px"></div><div>Switch mode</div></div>
+                    <div class="shortcuts-kbd"><kbd>S</kbd><div style="min-width:8px"></div><div>Open Settings</div></div>
+                    <div class="shortcuts-kbd"><kbd>D</kbd><div style="min-width:8px"></div><div>Open Dashboard</div></div>
+                    <div class="shortcuts-kbd"><kbd>L</kbd><div style="min-width:8px"></div><div>Open Logs</div></div>
+                    <div class="shortcuts-kbd"><kbd>H</kbd><div style="min-width:8px"></div><div>This help (Shortcuts) dialog</div></div>
+                </div>
+                <div class="modal-actions" style="margin-top:16px;">
+                    <button class="btn primary" @click="showShortcuts = false">Close</button>
+                </div>
             </div>
         </div>
     </div>

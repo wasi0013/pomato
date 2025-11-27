@@ -10,6 +10,8 @@ createApp({
             interval: null,
             showSettings: false,
             showDashboardModal: false,
+            showShortcuts: false,
+            showAbout: false,
             showLogViewer: false,
             chartInstance: null,
             lineChartInstance: null,
@@ -544,6 +546,15 @@ createApp({
                         this.showLogViewer = !this.showLogViewer;
                     }
                 }
+
+                // H: show shortcuts modal
+                if (key === 'h') {
+                    if (!(this.showSettings || this.showDashboardModal || this.showLogViewer) || this.showShortcuts) {
+                        event.preventDefault();
+                        if (this.showShortcuts) this.closeShortcuts();
+                        else this.openShortcuts();
+                    }
+                }
             }
         },
         getDailyData() {
@@ -555,6 +566,19 @@ createApp({
             const labels = Object.keys(daily).sort((a, b) => new Date(a) - new Date(b));
             const data = labels.map(date => daily[date]);
             return { labels, data };
+        }
+        ,
+        openShortcuts() {
+            this.showShortcuts = true;
+        },
+        closeShortcuts() {
+            this.showShortcuts = false;
+        },
+        openAbout() {
+            this.showAbout = true;
+        },
+        closeAbout() {
+            this.showAbout = false;
         }
     }
 }).mount('#app');
